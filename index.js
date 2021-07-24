@@ -10,16 +10,16 @@ app.use(express.static('public'));
 io.on('connect', (socket) => {
     console.log('Client has connected..');
 
+   socket.broadcast.emit('connect-message');
+    
+    // For each individual client, this events are managed
     socket.on('disconnect', () => {
         console.log('Client has disconnected..');
+        socket.broadcast.emit('disconnect-message');
     });
-    
-    io.emit('connect-message');
-    
     socket.on('chat message', (msg) => {
-        io.emit('chat message', msg);
+        socket.broadcast.emit('chat message', msg);
     });
-
 });
 
 app.get('/', (req,res) => {
