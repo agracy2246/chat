@@ -8,16 +8,17 @@ const io = new Server(server);
 app.use(express.static('public'));
 
 io.on('connect', (socket) => {
-    console.log('Client has connected..');
+   console.log('Client has connected..');
 
    socket.broadcast.emit('connect-message');
     
     // For each individual client, this events are managed
     socket.on('disconnect', () => {
         console.log('Client has disconnected..');
-        socket.broadcast.emit('disconnect-message');
+        socket.broadcast.emit('disconnect-message', socket.userName);
     });
     socket.on('chat message', (msg) => {
+        socket.userName = msg['user'];
         socket.broadcast.emit('chat message', msg);
     });
 });

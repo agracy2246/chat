@@ -4,39 +4,42 @@
         <title>Eyepoll Chat</title>
         <meta name="viewport" content="width=1060px, maximum-scale=1.0" />
         <style>
-        body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem;  position:  0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
-        .input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
-        input:focus { outline: none; }
-        #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
-        #nickname {
-            min-width: 25%;
-        }
-        #messages {order: 1; list-style-type: none; margin: 0; padding: 0; height: 100%; 
-            word-wrap: break-word;}
-        #messages > li { padding: 0.5rem 1rem; }
-        #messages > li:nth-child(odd) { background: #efefef; }
+            body { margin: 0; padding-bottom: 3rem; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+            #form { background: rgba(0, 0, 0, 0.15); padding: 0.25rem;  position:  0; left: 0; right: 0; display: flex; height: 3rem; box-sizing: border-box; backdrop-filter: blur(10px); }
+            .input { border: none; padding: 0 1rem; flex-grow: 1; border-radius: 2rem; margin: 0.25rem; }
+            input:focus { outline: none; }
+            #form > button { background: #333; border: none; padding: 0 1rem; margin: 0.25rem; border-radius: 3px; outline: none; color: #fff; }
+            #nickname {
+                min-width: 25%;
+            }
+            #messages {order: 1; list-style-type: none; margin: 0; padding: 0; height: 100%; 
+                word-wrap: break-word;}
+            #messages > li { padding: 0.5rem 1rem; }
+            #messages > li:nth-child(odd) { background: #efefef; }
 
-        .chat-container {
-            display: flex;
-            flex-direction: column;
-            width: 400px;
-            max-height: 25%;
-            border-style: ridge;
-            border-radius: 5px;
-            box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
-        }
-        .message-container {
-            order: 1;
-            height: 400px;
-            overflow-y: auto;
-        }
-        .message-input {
-            order: 2;
-        }
-        .userConnected {
-            font-style: italic;
-        }
+            .chat-container {
+                display: flex;
+                flex-direction: column;
+                width: 400px;
+                max-height: 25%;
+                border-style: ridge;
+                border-radius: 5px;
+                box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+            }
+            .message-container {
+                order: 1;
+                height: 400px;
+                overflow-y: auto;
+            }
+            .message-input {
+                order: 2;
+            }
+            .userConnected {
+                font-style: italic;
+            }
+            .userDisconnected {
+                font-style: italic;
+            }
         
         </style>
     </head>
@@ -56,82 +59,91 @@
             </div>
             
         </div>
+
         <script src="/socket.io/socket.io.js"></script>
         <script>
-        window.onload = () => {
-            var socket = io();
+            window.onload = () => {
+                var socket = io();
 
-            var form = document.getElementById('form');
-            var input = document.getElementById('input');
-            var nickname = document.getElementById('nickname');
+                var form = document.getElementById('form');
+                var input = document.getElementById('input');
+                var nickname = document.getElementById('nickname');
 
-            // Target the nickname input box
-            nickname.focus();
+                // Target the nickname input box
+                nickname.focus();
 
-            
 
-            // User clicks the send button, check for a message and username
-            form.addEventListener('submit', function(e) {
-                e.preventDefault();
-                if (input.value && nickname.value) {
-                    // Create a new message item and append it to the chat container
-                    // We do this locally because the server will not propagate our own message to us
+                // User clicks the send button, check for a message and username
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    if (input.value && nickname.value) {
+                        // Create a new message item and append it to the chat container
+                        // We do this locally because the server will not propagate our own message to us
+                        var li = document.createElement('li');
+                        document.getElementById('messages').appendChild(li);
+                        li.textContent = nickname.value + ': ' + input.value;
+                        
+                        // Send our message to the server
+                        socket.emit('chat message', {"user": nickname.value, "message":input.value});
+                        input.value = '';
+                        input.focus();
+                    }
+                });
+
+                nickname.addEventListener('keypress', (event) => {
+                    if (event.key == 'Enter' && document.getElementById('nickname').value) {
+                        nickname.disabled = true;
+                        input.focus();
+                    }
+                });
+                nickname.addEventListener("focusout", () => {
+                    if (nickname.value && nickname.value !== "") {
+                        nickname.disabled = true;
+                    }
+                });
+                nickname.addEventListener("click", (event) => {
+                    console.log(event);
+                    if (nickname.disabled) {
+                        console.log(event);
+                    }
+                });
+
+                input.addEventListener('keypress', () => {
+                    
+                });
+
+                socket.on('connect-message', () => {
+                    console.log('Another user has joined...');
+                    var li = document.createElement('li');
+                    li.classList.add('userConnected');
+                    document.getElementById('messages').appendChild(li);
+                    li.textContent = '* A user has joined the chat...';
+                });
+                
+                socket.on('disconnect-message', (msg) => {
+                    if (msg) {
+                        var li = document.createElement('li');
+                        li.classList.add('userDisconnected');
+                        document.getElementById('messages').appendChild(li);
+                        li.textContent = `* ${msg} has left the chat`;
+                    } else {
+                        var li = document.createElement('li');
+                        li.classList.add('userDisconnected');
+                        document.getElementById('messages').appendChild(li);
+                        li.textContent = "* A user (gave no nickname) has left the chat";
+                    }
+                    console.log('A user has left...');
+                });
+
+                socket.on('chat message', (msg) => {
                     var li = document.createElement('li');
                     document.getElementById('messages').appendChild(li);
-                    li.textContent = nickname.value + ': ' + input.value;
-                    
-                    // Send our message to the server
-                    socket.emit('chat message', {"user": nickname.value, "message":input.value});
-                    input.value = '';
-                    input.focus();
-                }
-            });
+                    li.textContent = msg['user'] + ': ' + msg['message'];
 
-            nickname.addEventListener('keypress', (event) => {
-                if (event.key == 'Enter' && document.getElementById('nickname').value) {
-                    nickname.disabled = true;
-                    input.focus();
-                }
-            });
-            nickname.addEventListener("focusout", () => {
-                if (nickname.value && nickname.value !== "") {
-                    nickname.disabled = true;
-                }
-            });
-            nickname.addEventListener("click", (event) => {
-                console.log(event);
-                if (nickname.disabled) {
-                    console.log(event);
-                }
-            });
-
-            input.addEventListener('keypress', () => {
-                
-            });
-
-            socket.on('connect-message', () => {
-                console.log('Another user has joined...');
-                var li = document.createElement('li');
-                li.classList.add('userConnected');
-                document.getElementById('messages').appendChild(li);
-                li.textContent = '* A user has joined the chat...';
-            });
-            
-            socket.on('disconnect-message', () => {
-                console.log('A user has left...');
-            });
-
-            socket.on('chat message', (msg) => {
-                var li = document.createElement('li');
-                document.getElementById('messages').appendChild(li);
-                li.textContent = msg['user'] + ': ' + msg['message'];
-
-                var element = document.getElementById('messages');
-                console.log(element.children.length);
-                var element = document.getElementById("message-container");
-                element.scrollTop = element.scrollHeight;
-            });
-        };
+                    var element = document.getElementById('messages');
+                    element.scrollTop = element.scrollHeight;
+                });
+            };
         </script>
     </body>
 </html>
