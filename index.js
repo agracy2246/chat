@@ -20,12 +20,6 @@ io.on('connect', (socket) => {
 
 });
 
-io.on('chat message', (data) => {
-    console.log('data');
-});
-
-
-
 app.get('/', (req,res) => {
     res.sendFile(__dirname + '/index.html');
 });
