@@ -5,6 +5,8 @@ const server = http.createServer(app);
 const { Server } = require('socket.io');
 const io = new Server(server);
 
+app.use(express.static('public'));
+
 io.on('connect', (socket) => {
     console.log('Client has connected..');
 
@@ -21,6 +23,10 @@ io.on('connect', (socket) => {
 });
 
 app.get('/', (req,res) => {
+    res.sendFile(__dirname + '/redirect.html');
+});
+
+app.get('/chat', (req,res) => {
     res.sendFile(__dirname + '/index.html');
 });
 
