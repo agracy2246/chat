@@ -79,9 +79,8 @@
                     if (input.value && nickname.value) {
                         // Create a new message item and append it to the chat container
                         // We do this locally because the server will not propagate our own message to us
-                        var li = document.createElement('li');
-                        document.getElementById('messages').appendChild(li);
-                        li.textContent = nickname.value + ': ' + input.value;
+                        addChatMessage(nickname.value + ': ' + input.value, 'message');
+                        updateScroll('message-container');
                         
                         // Send our message to the server
                         socket.emit('chat message', {"user": nickname.value, "message":input.value});
@@ -101,48 +100,51 @@
                         nickname.disabled = true;
                     }
                 });
-                nickname.addEventListener("click", (event) => {
-                    console.log(event);
-                    if (nickname.disabled) {
-                        console.log(event);
-                    }
-                });
-
+                
                 input.addEventListener('keypress', () => {
                     
                 });
 
                 socket.on('connect-message', () => {
-                    console.log('Another user has joined...');
-                    var li = document.createElement('li');
-                    li.classList.add('userConnected');
-                    document.getElementById('messages').appendChild(li);
-                    li.textContent = '* A user has joined the chat...';
+                    addChatMessage(null, 'connect');
+                    updateScroll('message-container');                    
                 });
                 
                 socket.on('disconnect-message', (msg) => {
-                    if (msg) {
-                        var li = document.createElement('li');
-                        li.classList.add('userDisconnected');
-                        document.getElementById('messages').appendChild(li);
-                        li.textContent = `* ${msg} has left the chat`;
-                    } else {
-                        var li = document.createElement('li');
-                        li.classList.add('userDisconnected');
-                        document.getElementById('messages').appendChild(li);
-                        li.textContent = "* A user (gave no nickname) has left the chat";
-                    }
-                    console.log('A user has left...');
+                    addChatMessage(msg, 'disconnect');
+                    updateScroll('message-container');
                 });
 
                 socket.on('chat message', (msg) => {
-                    var li = document.createElement('li');
-                    document.getElementById('messages').appendChild(li);
-                    li.textContent = msg['user'] + ': ' + msg['message'];
-
-                    var element = document.getElementById('messages');
-                    element.scrollTop = element.scrollHeight;
+                    addChatMessage(msg['user'] + ': ' + msg['message'], 'message');
+                    updateScroll('message-container');
                 });
+            };
+
+            function updateScroll(elementId) {
+                var element = document.getElementById(elementId);
+                element.scrollTop = element.scrollHeight;
+            };
+            function addChatMessage (msg, msgType) {
+                var li = document.createElement('li');
+                
+                if (msgType == 'message') {
+                    li.textContent = msg;
+                }
+                else if (msgType == 'connect') {
+                    li.classList.add('userConnected');
+                    li.textContent = '* A user has joined the chat';
+                }
+                else if (msgType == 'disconnect') {
+                    if (msg) {
+                        li.classList.add('userDisconnected');
+                        li.textContent = `* ${msg} has left the chat`;
+                    } else {
+                        li.classList.add('userDisconnected');
+                        li.textContent = "* A user (gave no nickname) has left the chat";
+                    }
+                }
+                document.getElementById('messages').appendChild(li);
             };
         </script>
     </body>
