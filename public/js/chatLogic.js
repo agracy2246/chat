@@ -1,84 +1,78 @@
 window.onload = () => {
     var socket = io();
 
-    var form = document.getElementById('form');
-    var input = document.getElementById('input');
-    var nickname = document.getElementById('nickname');
-
+    var form = $('#form');
+    var input = $('#input');
+    var nickname = $('#nickname');
+    var messageList = $('#messages');
     // Target the nickname input box
     nickname.focus();
 
-
     // User clicks the send button, check for a message and username
-    form.addEventListener('submit', function(e) {
+    form.on('submit', function(e) {
         e.preventDefault();
-        if (input.value && nickname.value) {
+        if (input.val() && nickname.val()) {
             // Create a new message item and append it to the chat container
             // We do this locally because the server will not propagate our own message to us
-            addChatMessage(nickname.value + ': ' + input.value, 'message');
+            addChatMessage(messageList,nickname.val() + ': ' + input.val(), 'message');
             updateScroll('message-container');
             
             // Send our message to the server
-            socket.emit('chat message', {"user": nickname.value, "message":input.value});
-            input.value = '';
+            socket.emit('chat message', {"user": nickname.val(), "message":input.val()});
+            input.val('');
             input.focus();
         }
     });
 
-    nickname.addEventListener('keypress', (event) => {
-        if (event.key == 'Enter' && document.getElementById('nickname').value) {
-            nickname.disabled = true;
+    nickname.on('keypress', (event) => {
+        if (event.key == 'Enter' && $('#nickname').val()) {
+            nickname.prop('disabled', true);
             input.focus();
         }
     });
-    nickname.addEventListener("focusout", () => {
-        if (nickname.value && nickname.value !== "") {
-            nickname.disabled = true;
+    nickname.on("focusout", () => {
+        if (nickname.val() && nickname.val() !== "") {
+            nickname.prop('disabled', true);
         }
-    });
-    
-    input.addEventListener('keypress', () => {
-        
     });
 
     socket.on('connect-message', () => {
-        addChatMessage(null, 'connect');
+        addChatMessage(messageList, null, 'connect');
         updateScroll('message-container');                    
     });
     
     socket.on('disconnect-message', (msg) => {
-        addChatMessage(msg, 'disconnect');
+        addChatMessage(messageList,msg, 'disconnect');
         updateScroll('message-container');
     });
 
     socket.on('chat message', (msg) => {
-        addChatMessage(msg['user'] + ': ' + msg['message'], 'message');
+        addChatMessage(messageList,msg['user'] + ': ' + msg['message'], 'message');
         updateScroll('message-container');
     });
 };
 
 function updateScroll(elementId) {
-    var element = document.getElementById(elementId);
-    element.scrollTop = element.scrollHeight;
+    $('#' + elementId).scrollTop($('#' + elementId).prop('scrollHeight'));
 };
-function addChatMessage (msg, msgType) {
-    var li = document.createElement('li');
+function addChatMessage (messageList ,msg, msgType) {
+    var li = $('<li></li>');
     
     if (msgType == 'message') {
-        li.textContent = msg;
+        li.text(msg);
     }
     else if (msgType == 'connect') {
-        li.classList.add('userConnected');
-        li.textContent = '* A user has joined the chat';
+        li.addClass('userConnected');
+        li.text('* A user has joined the chat');
     }
     else if (msgType == 'disconnect') {
         if (msg) {
-            li.classList.add('userDisconnected');
-            li.textContent = `* ${msg} has left the chat`;
+            li.addClass('userDisconnected');
+            li.text(`* ${msg} has left the chat`);
         } else {
-            li.classList.add('userDisconnected');
-            li.textContent = "* A user (gave no nickname) has left the chat";
+            li.addClass('userDisconnected');
+            li.text("* A user (gave no nickname) has left the chat");
         }
     }
-    document.getElementById('messages').appendChild(li);
+    messageList.append(li);
 };
